@@ -7,7 +7,6 @@ import deleteList from '../../utils/helper/deleteList';
 import DeleteIcon from '../icons/deleteIcon';
 
 export default function BoardView({ board, getBoardData }) {
-    console.log("🚀 ~ file: boardView.js ~ line 10 ~ BoardView ~ board", board)
     const navigation = useNavigation();
     const [addList, setAddList] = useState(false);
     const [addListValue, setAddListValue] = useState('');
