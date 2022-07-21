@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { TextInput, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import getCards from '../../utils/data/getCards';
 import createCard from '../../utils/helper/createCard';
 import deleteCard from '../../utils/helper/deleteCard';
@@ -55,7 +55,7 @@ export default function BoardCard({ id, idList }) {
                         disabled={isActive}
                         style={[
                             styles.item,
-                            { backgroundColor: isActive ? "red" : "#fff" },
+                            { backgroundColor: isActive ? "lightgreen" : "#fff" },
                         ]}
                     >
                         <Text style={styles.title}>{item.name}</Text>
@@ -70,12 +70,18 @@ export default function BoardCard({ id, idList }) {
 
     const handleDrag = (val1, val2, val3) => {
         const next = val3 + 1;
+        const prev = val3 - 1;
         setData(val1)
         const item = val1.find((el, i) => i === val3)
         const nextItem = val1.find((el, i) => i === next)
-        console.log("🚀 ~ file: boardCard.js ~ line 74 ~ handleDrag ~ nextItem", nextItem)
-        const position = nextItem.pos - 100;
-        updateCardPosition(item.id, position)
+        const prevItem = val1.find((el, i) => i === prev)
+        if (nextItem) {
+            const position = nextItem.pos - 100;
+            updateCardPosition(item.id, position)
+        } else {
+            const position = prevItem.pos + 100;
+            updateCardPosition(item.id, position)
+        }
     }
 
     return (
@@ -91,6 +97,7 @@ export default function BoardCard({ id, idList }) {
                             onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
                             keyExtractor={item => item.id}
                             renderItem={renderItem}
+                            activationDistance={100}
                         />
                     </NestableScrollContainer>
                 </>

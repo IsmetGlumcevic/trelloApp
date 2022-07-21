@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, Dimensions, TextInput } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import BoardCard from './boardCard';
 import createList from '../../utils/helper/createList';
 import deleteList from '../../utils/helper/deleteList';
 import DeleteIcon from '../icons/deleteIcon';
+import DraggableFlatList, {
+    ScaleDecorator,
+    NestableScrollContainer, NestableDraggableFlatList,
+} from "react-native-draggable-flatlist";
+import updateListPosition from '../../utils/helper/updateListPosition';
 
 export default function BoardView({ board, getBoardData }) {
     const navigation = useNavigation();
     const [addList, setAddList] = useState(false);
     const [addListValue, setAddListValue] = useState('');
-
-    const onPress = (id) => {
-        navigation.navigate('Board', {
-            boardId: id,
-        })
-    }
+    const [data, setData] = useState(board.lists);
+    const dragRef = useRef(null)
 
     if (!board) {
         return (
@@ -34,21 +35,48 @@ export default function BoardView({ board, getBoardData }) {
         await getBoardData();
     }
 
-    const renderItem = ({ item }) => {
+    const renderItem = ({ item, drag, isActive }) => {
         return (
-            <TouchableOpacity style={styles.item} onPress={() => onPress(item.id)}>
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.title}>{item.name}</Text>
-                        <TouchableOpacity onPress={() => deleteListHandler(item.id)}>
-                            <DeleteIcon />
-                        </TouchableOpacity>
+            <ScaleDecorator key={item.id}>
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onLongPress={drag}
+                    disabled={isActive}
+                    style={[
+                        styles.item,
+                        { backgroundColor: isActive ? "lightgreen" : "#fff" },
+                    ]}
+                >
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.title}>{item.name}</Text>
+                            <TouchableOpacity onPress={() => deleteListHandler(item.id)}>
+                                <DeleteIcon />
+                            </TouchableOpacity>
+                        </View>
+                        <BoardCard id={item.id} idList={item.id} />
                     </View>
-                    <BoardCard id={item.id} idList={item.id} />
-                </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </ScaleDecorator>
+
         )
     };
+
+    const handleDrag = (val1, val2, val3) => {
+        const next = val3 + 1;
+        const prev = val3 - 1;
+        setData(val1)
+        const item = val1.find((el, i) => i === val3)
+        const nextItem = val1.find((el, i) => i === next)
+        const prevItem = val1.find((el, i) => i === prev)
+        if (nextItem) {
+            const position = nextItem.pos - 100;
+            updateListPosition(item.id, position)
+        } else {
+            const position = prevItem.pos + 100;
+            updateListPosition(item.id, position)
+        }
+    }
 
     return (
         <>
@@ -71,12 +99,14 @@ export default function BoardView({ board, getBoardData }) {
                 </TouchableOpacity>
             )
             }
-            <FlatList
-                data={board.lists.filter(item => item.closed === false)}
-                extraData={board.lists}
+            <DraggableFlatList
+                data={data.filter(item => item.closed === false)}
+                extraData={data}
                 horizontal
+                onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
+                keyExtractor={item => item.id}
                 renderItem={renderItem}
-                keyExtractor={(item, index) => index}
+                simultaneousHandlers={dragRef}
             />
         </>
     );
@@ -85,14 +115,15 @@ export default function BoardView({ board, getBoardData }) {
 const styles = StyleSheet.create({
     item: {
         backgroundColor: '#f2f2f2',
-        padding: 10,
+        padding: 3,
         marginVertical: 8,
         marginHorizontal: 5,
-        width: Dimensions.get("window").width - 60,
+        width: Dimensions.get("window").width - 120,
+        borderRadius: 8
     },
     card: {
         backgroundColor: '#ddd',
-        padding: 16,
+        padding: 8,
         borderRadius: 8
     },
     cardHeader: {
