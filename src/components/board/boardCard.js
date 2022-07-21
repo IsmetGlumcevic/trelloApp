@@ -34,7 +34,7 @@ export default function BoardCard({ id, idList }) {
         return <ActivityIndicator />
     }
 
-    const creatCardHandler = async () => {
+    const createCardHandler = async () => {
         await createCard(idList, addCardValue);
         await getCardData();
         setAddCardValue('');
@@ -110,7 +110,7 @@ export default function BoardCard({ id, idList }) {
                         value={addCardValue}
                         placeholder="Ukucaj naziv kartice"
                     />
-                    <TouchableOpacity style={styles.itemAdd} onPress={() => creatCardHandler()}>
+                    <TouchableOpacity style={styles.itemAdd} onPress={() => createCardHandler()}>
                         <Text style={styles.title}>Dodaj</Text>
                     </TouchableOpacity>
                 </View>
