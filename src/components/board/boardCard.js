@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { TextInput, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import getCards from '../../utils/data/getCards';
 import createCard from '../../utils/helper/createCard';
 import deleteCard from '../../utils/helper/deleteCard';
+import updateCardPosition from '../../utils/helper/updateCardPosition';
 import DeleteIcon from '../icons/deleteIcon';
+import DraggableFlatList, {
+    ScaleDecorator,
+    NestableScrollContainer, NestableDraggableFlatList,
+} from "react-native-draggable-flatlist";
 
 export default function BoardCard({ id, idList }) {
     const [data, setData] = useState([]);
@@ -40,25 +45,61 @@ export default function BoardCard({ id, idList }) {
         await getCardData();
     }
 
+    const renderItem = ({ item, drag, isActive }) => {
+        return (
+            <ScaleDecorator key={item.id}>
+                <View style={styles.card}>
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onLongPress={drag}
+                        disabled={isActive}
+                        style={[
+                            styles.item,
+                            { backgroundColor: isActive ? "lightgreen" : "#fff" },
+                        ]}
+                    >
+                        <Text style={styles.title}>{item.name}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteCardHandler(item.id)}>
+                        <DeleteIcon />
+                    </TouchableOpacity>
+                </View>
+            </ScaleDecorator>
+        );
+    };
+
+    const handleDrag = (val1, val2, val3) => {
+        const next = val3 + 1;
+        const prev = val3 - 1;
+        setData(val1)
+        const item = val1.find((el, i) => i === val3)
+        const nextItem = val1.find((el, i) => i === next)
+        const prevItem = val1.find((el, i) => i === prev)
+        if (nextItem) {
+            const position = nextItem.pos - 100;
+            updateCardPosition(item.id, position)
+        } else {
+            const position = prevItem.pos + 100;
+            updateCardPosition(item.id, position)
+        }
+    }
+
     return (
         <>
             {data.length === 0 ? (
                 <Text style={{ padding: 15 }}>Nema kartica</Text>
             ) : (
                 <>
-                    {data.map((item, i) => {
-                        console.log("🚀 ~ file: boardCard.js ~ line 50 ~ {data.filter ~ item", item)
-                        return (
-                            <View key={i} style={styles.card}>
-                                <TouchableOpacity style={styles.item} onPress={() => onPress(item.id)}>
-                                    <Text style={styles.title}>{item.name}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => deleteCardHandler(item.id)}>
-                                    <DeleteIcon />
-                                </TouchableOpacity>
-                            </View>
-                        )
-                    })}
+                    <NestableScrollContainer>
+                        <NestableDraggableFlatList
+                            data={data ? data : []}
+                            extraData={data}
+                            onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
+                            keyExtractor={item => item.id}
+                            renderItem={renderItem}
+                            activationDistance={100}
+                        />
+                    </NestableScrollContainer>
                 </>
             )}
             {addCard ? (
@@ -122,5 +163,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 8,
         borderColor: '#eee'
+    },
+    rowItem: {
+        height: 100,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    text: {
+        color: "white",
+        fontSize: 24,
+        fontWeight: "bold",
+        textAlign: "center",
     },
 });
