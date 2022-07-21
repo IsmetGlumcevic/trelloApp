@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import getBoards from '../utils/data/getBoards';
 import BoardList from '../components/board/boardList';
 import LoaderBoards from '../components/shared/loaderBoards';
-import { TouchableOpacity, Text } from 'react-native';
-import Login from '../components/login';
 
 export default function Boards() {
   const [data, setData] = useState([]);
@@ -28,10 +26,6 @@ export default function Boards() {
   }
 
   return (
-    <>
-      {/* <TouchableOpacity><Text>Login</Text></TouchableOpacity>
-      <Login /> */}
-      <BoardList getBoardsData={getBoardsData} boards={data} />
-    </>
+    <BoardList getBoardsData={getBoardsData} boards={data} />
   );
 }
