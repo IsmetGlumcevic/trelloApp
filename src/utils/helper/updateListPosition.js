@@ -9,8 +9,7 @@ export default async function updateListPosition(id, pos) {
             }
         })
         const response = await updatePosition.text();
-        const data = await JSON.parse(response);
-        return data;
+        return JSON.parse(response);
     } catch (e) {
         console.log(e)
     }

@@ -10,8 +10,7 @@ export default async function getCards(listId) {
             }
         })
         const response = await fetchBoard.text();
-        const boardData = await JSON.parse(response);
-        return boardData;
+        return JSON.parse(response);
     } catch (e) {
         console.log(e)
     }
