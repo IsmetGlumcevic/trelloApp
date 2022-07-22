@@ -9,8 +9,7 @@ export default async function createBoard(name) {
             },
         })
         const response = await create.text();
-        const data = await JSON.parse(response);
-        return data;
+        return JSON.parse(response);
     } catch(e) {
         console.log(e)
     }

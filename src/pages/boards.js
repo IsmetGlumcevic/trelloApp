@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import getBoards from '../utils/data/getBoards';
 import BoardList from '../components/board/boardList';
 import LoaderBoards from '../components/shared/loaderBoards';
+import { AuthContext } from '../context/AuthContext';
+import { APIKey, APIToken } from '../../variables';
 
 export default function Boards() {
+  const { token, verifyToken } = useContext(AuthContext);
   const [data, setData] = useState([]);
   const [loader, setLoader] = useState(true);
 

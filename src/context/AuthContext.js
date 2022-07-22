@@ -12,10 +12,8 @@ const AuthContextProvider = props => {
     try {
       const value = await AsyncStorage.getItem('@token_Key')
       const tokenValue = value != null ? value : null;
-      console.log("🚀 ~ file: AuthContext.js ~ line 16 ~ checkUser ~ tokenValue", tokenValue)
       const verifyValue = await AsyncStorage.getItem('@verify_token_Key')
       const verifyTokenValue = verifyValue != null ? verifyValue : null;
-      console.log("🚀 ~ file: AuthContext.js ~ line 19 ~ checkUser ~ verifyTokenValue", verifyTokenValue)
       setToken(tokenValue)
       setVerifyToken(verifyTokenValue)
     } catch (e) {
@@ -35,7 +33,7 @@ const AuthContextProvider = props => {
         checkUser,
         token,
         setToken,
-        verifyToken, 
+        verifyToken,
         setVerifyToken
       }}>
       {props.children}
