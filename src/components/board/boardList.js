@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, TextInput, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import createBoard from '../../utils/helper/createBoard';
 import deleteBoard from '../../utils/helper/deleteBoard';
+import deleteToken from '../../utils/helper/deleteToken';
 import DeleteIcon from '../icons/deleteIcon';
+import { AuthContext } from '../../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function BoardList({ boards, getBoardsData }) {
+    const { token, checkUser } = useContext(AuthContext);
     const navigation = useNavigation();
     const [addBoard, setAddBoard] = useState(false);
     const [addBoardValue, setAddBoardValue] = useState('');
@@ -13,8 +17,18 @@ export default function BoardList({ boards, getBoardsData }) {
     const renderItem = ({ item }) => {
         return (
             <View style={styles.card}>
-                <TouchableOpacity style={styles.item} onPress={() => onPress(item.id)}>
-                    <View style={styles.img}></View>
+                <TouchableOpacity
+                    style={styles.item}
+                    onPress={() => onPress(item.id)}
+                >
+                    {item.prefs.backgroundImage ? (
+                        <Image
+                            source={{ uri: item.prefs.backgroundImage }}
+                            style={styles.img}
+                        />
+                    ) : (
+                        <View style={[styles.img, { backgroundColor: item.prefs.backgroundColor }]}></View>
+                    )}
                     <Text style={styles.title}>{item.name} {item.bgColor}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => deleteBoardHandler(item.id)}>
@@ -31,14 +45,20 @@ export default function BoardList({ boards, getBoardsData }) {
     }
 
     const creatBoardHandler = async () => {
-        await createBoard(addBoardValue);
+        await createBoard(addBoardValue, token);
         await getBoardsData();
         setAddBoardValue('');
     }
 
     const deleteBoardHandler = async (id) => {
-        await deleteBoard(id);
+        await deleteBoard(id, token);
         await getBoardsData();
+    }
+
+    const logout = async () => {
+       await deleteToken(token);
+       await AsyncStorage.setItem('@token_Key', '');
+       checkUser();
     }
 
     return (
@@ -68,7 +88,12 @@ export default function BoardList({ boards, getBoardsData }) {
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
             />
-
+            <TouchableOpacity 
+            style={styles.logout}
+            onPress={() => logout()}
+            >
+                <Text>Odjava</Text>
+            </TouchableOpacity>
         </>
     );
 }
@@ -102,7 +127,6 @@ const styles = StyleSheet.create({
     img: {
         width: 60,
         height: 60,
-        backgroundColor: '#ddd'
     },
     add: {
         fontSize: 30,
@@ -122,4 +146,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    titleInput: {
+        height: 60,
+        borderWidth: 1,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderColor: '#eee',
+        flex: 1,
+        marginHorizontal: 20
+    },
+    logout: {
+        height: 80,
+        paddingHorizontal: 30,
+        width: 150
+    }
 });

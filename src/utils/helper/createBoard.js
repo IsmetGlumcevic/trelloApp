@@ -1,8 +1,8 @@
-import { APIKey, APIToken } from '../../../variables';
+import { APIKey } from '../../../variables';
 
-export default async function createBoard(name) {
+export default async function createBoard(name, token) {
     try {
-        const create = await fetch(`https://api.trello.com/1/boards/?name=${name}&key=${APIKey}&token=${APIToken}`, {
+        const create = await fetch(`https://api.trello.com/1/boards/?name=${name}&key=${APIKey}&token=${token}`, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json'

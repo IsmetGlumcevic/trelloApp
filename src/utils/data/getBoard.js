@@ -1,8 +1,8 @@
-import { APIKey, APIToken } from '../../../variables';
+import { APIKey } from '../../../variables';
 
-export default async function getBoard(boardId) {
+export default async function getBoard(boardId, token) {
     try {
-        const fetchBoard = await fetch(`https://api.trello.com/1/boards/${boardId}?fields=name&lists=all&list_fields=all&key=${APIKey}&token=${APIToken}`, {
+        const fetchBoard = await fetch(`https://api.trello.com/1/boards/${boardId}?fields=name&lists=open&list_fields=all&key=${APIKey}&token=${token}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'

@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { TextInput, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import getCards from '../../utils/data/getCards';
 import createCard from '../../utils/helper/createCard';
 import deleteCard from '../../utils/helper/deleteCard';
 import updateCardPosition from '../../utils/helper/updateCardPosition';
 import DeleteIcon from '../icons/deleteIcon';
-import DraggableFlatList, {
+import {
     ScaleDecorator,
     NestableScrollContainer, NestableDraggableFlatList,
 } from "react-native-draggable-flatlist";
+import { AuthContext } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
-export default function BoardCard({ id, idList }) {
+export default function BoardCard({ id, idList, isDrag }) {
+    const { token } = useContext(AuthContext);
+    const navigation = useNavigation();
     const [data, setData] = useState([]);
     const [loader, setLoader] = useState(true);
     const [addCard, setAddCard] = useState(false);
@@ -18,7 +22,7 @@ export default function BoardCard({ id, idList }) {
 
     async function getCardData() {
         try {
-            const getData = await getCards(id);
+            const getData = await getCards(id, token);
             setData(getData);
             setLoader(false)
         } catch (e) {
@@ -35,13 +39,13 @@ export default function BoardCard({ id, idList }) {
     }
 
     const createCardHandler = async () => {
-        await createCard(idList, addCardValue);
+        await createCard(idList, addCardValue, token);
         await getCardData();
         setAddCardValue('');
     }
 
     const deleteCardHandler = async (id) => {
-        await deleteCard(id);
+        await deleteCard(id, token);
         await getCardData();
     }
 
@@ -55,14 +59,28 @@ export default function BoardCard({ id, idList }) {
                         disabled={isActive}
                         style={[
                             styles.item,
-                            { backgroundColor: isActive ? "lightgreen" : "#fff" },
+                            {
+                                backgroundColor: isActive ? "lightgreen" : "#fff",
+                                maxHeight: isDrag ? 40 : 'auto'
+                            },
                         ]}
                     >
-                        <Text style={styles.title}>{item.name}</Text>
+                        <TouchableOpacity
+                            onPress={
+                                () => navigation.navigate('Card', {
+                                    cardId: item.id,
+                                    name: item.name
+                                })
+                            }
+                        >
+                            <Text style={styles.title}>{item.name}</Text>
+                        </TouchableOpacity>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => deleteCardHandler(item.id)}>
-                        <DeleteIcon />
-                    </TouchableOpacity>
+                    {!isDrag && (
+                        <TouchableOpacity onPress={() => deleteCardHandler(item.id)}>
+                            <DeleteIcon />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScaleDecorator>
         );
@@ -77,10 +95,10 @@ export default function BoardCard({ id, idList }) {
         const prevItem = val1.find((el, i) => i === prev)
         if (nextItem) {
             const position = nextItem.pos - 100;
-            updateCardPosition(item.id, position)
+            updateCardPosition(item.id, position, token)
         } else {
             const position = prevItem.pos + 100;
-            updateCardPosition(item.id, position)
+            updateCardPosition(item.id, position, token)
         }
     }
 
@@ -97,7 +115,6 @@ export default function BoardCard({ id, idList }) {
                             onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
                             keyExtractor={item => item.id}
                             renderItem={renderItem}
-                            activationDistance={100}
                         />
                     </NestableScrollContainer>
                 </>

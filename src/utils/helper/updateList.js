@@ -1,8 +1,8 @@
 import { APIKey } from '../../../variables';
 
-export default async function updateListPosition(id, pos, token) {
+export default async function updateList(id, name, token) {
     try {
-        const updatePosition = await fetch(`https://api.trello.com/1/lists/${id}/?pos=${pos}&key=${APIKey}&token=${token}`, {
+        const updatePosition = await fetch(`https://api.trello.com/1/lists/${id}/?name=${name}&key=${APIKey}&token=${token}`, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json'
