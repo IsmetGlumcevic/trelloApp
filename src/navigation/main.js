@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Boards from '../pages/boards';
 import Board from '../pages/board';
 import Login from '../pages/login';
+import Card from '../pages/card';
 import { AuthContext } from '../context/AuthContext';
 import { ActivityIndicator } from 'react-native';
 
@@ -19,8 +20,13 @@ export default function Main() {
     <Stack.Navigator>
       {token ?
         <>
-          <Stack.Screen name="Boards" component={Boards} />
-          <Stack.Screen name="Board" component={Board} />
+          <Stack.Group>
+            <Stack.Screen name="Boards" component={Boards} />
+            <Stack.Screen name="Board" component={Board} />
+          </Stack.Group>
+          <Stack.Group screenOptions={{ presentation: 'modal' }}>
+            <Stack.Screen name="Card" component={Card} />
+          </Stack.Group>
         </>
         :
         <Stack.Screen name="Login" component={Login} />

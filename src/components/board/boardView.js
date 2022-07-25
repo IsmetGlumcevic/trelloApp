@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import BoardCard from './boardCard';
@@ -7,16 +7,24 @@ import deleteList from '../../utils/helper/deleteList';
 import DeleteIcon from '../icons/deleteIcon';
 import DraggableFlatList, {
     ScaleDecorator,
-    NestableScrollContainer, NestableDraggableFlatList,
 } from "react-native-draggable-flatlist";
 import updateListPosition from '../../utils/helper/updateListPosition';
+import updateList from '../../utils/helper/updateList';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function BoardView({ board, getBoardData }) {
+    const { token } = useContext(AuthContext);
     const navigation = useNavigation();
     const [addList, setAddList] = useState(false);
     const [addListValue, setAddListValue] = useState('');
-    const [data, setData] = useState(board.lists);
-    const dragRef = useRef(null)
+    const [editListTitle, setEditListTitle] = useState(false);
+    const [listTitleValue, setListTitleValue] = useState('');
+    const [selectedList, setSelectedList] = useState();
+    const [data, setData] = useState([]);
+    const [isDragView, setIsDragView] = useState(false);
+    const [boardValue, setBoardValue] = useState('');
+    const [editBoard, setEditBoard] = useState(false);
+    const [selectedBoard, setSelectedBoard] = useState('');
 
     if (!board) {
         return (
@@ -25,17 +33,80 @@ export default function BoardView({ board, getBoardData }) {
     }
 
     const createListHandler = async () => {
-        await createList(addListValue, board.id);
+        await createList(addListValue, board.id, token);
         await getBoardData();
         setAddListValue('');
     }
 
     const deleteListHandler = async (id) => {
-        await deleteList(id);
+        await deleteList(id, token);
         await getBoardData();
     }
 
-    const renderItem = ({ item, drag, isActive }) => {
+    const handleEditListTitle = (name, id) => {
+        setEditListTitle(true);
+        setListTitleValue(name);
+        setSelectedList(id)
+    }
+
+    const handleUpdateTitle = async (id) => {
+        await updateList(id, listTitleValue, token)
+        await getBoardData();
+        setEditListTitle(false);
+        setListTitleValue('');
+    }
+
+
+    const handleEditBoard = (name, id) => {
+        setEditBoard(true);
+        setBoardValue(name);
+        setSelectedBoard(id)
+    }
+
+    const handleUpdateBoard = async (id) => {
+        await updateBoard(id, boardValue, token)
+        await getBoardsData();
+        setEditBoard(false);
+        setBoardValue('');
+    }
+
+    const renderItem = ({ item }) => {
+        return (
+            <TouchableOpacity
+                onLongPress={handleDraggableView}
+                style={styles.item}>
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        {editListTitle && selectedList === item.id ? (
+                            <>
+                                <TextInput
+                                    style={styles.titleInput}
+                                    onChangeText={setListTitleValue}
+                                    value={listTitleValue}
+                                />
+                                <TouchableOpacity onPress={() => handleUpdateTitle(item.id)}>
+                                    <Text>Snimi</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity onPress={() => handleEditListTitle(item.name, item.id)}>
+                                    <Text style={styles.title}>{item.name}</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => deleteListHandler(item.id)}>
+                                    <DeleteIcon />
+                                </TouchableOpacity>
+                            </>
+                        )}
+
+                    </View>
+                    <BoardCard isDrag={false} id={item.id} idList={item.id} />
+                </View>
+            </TouchableOpacity>
+        )
+    };
+
+    const renderDraggableItem = ({ item, drag, isActive }) => {
         return (
             <ScaleDecorator key={item.id}>
                 <TouchableOpacity
@@ -43,18 +114,15 @@ export default function BoardView({ board, getBoardData }) {
                     onLongPress={drag}
                     disabled={isActive}
                     style={[
-                        styles.item,
-                        { backgroundColor: isActive ? "lightgreen" : "#fff" },
+                        styles.dragItem,
+                        { backgroundColor: isActive ? "lightgreen" : "transparent" },
                     ]}
                 >
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <Text style={styles.title}>{item.name}</Text>
-                            <TouchableOpacity onPress={() => deleteListHandler(item.id)}>
-                                <DeleteIcon />
-                            </TouchableOpacity>
                         </View>
-                        <BoardCard id={item.id} idList={item.id} />
+                        <BoardCard isDrag={true} id={item.id} idList={item.id} />
                     </View>
                 </TouchableOpacity>
             </ScaleDecorator>
@@ -71,44 +139,63 @@ export default function BoardView({ board, getBoardData }) {
         const prevItem = val1.find((el, i) => i === prev)
         if (nextItem) {
             const position = nextItem.pos - 100;
-            updateListPosition(item.id, position)
+            updateListPosition(item.id, position, token)
         } else {
             const position = prevItem.pos + 100;
-            updateListPosition(item.id, position)
+            updateListPosition(item.id, position, token)
         }
     }
 
+    useEffect(() => {
+        setData(board.lists)
+    }, [board])
+
+    const handleDraggableView = () => {
+        setIsDragView(true)
+    }
+
     return (
-        <>
-            {addList ? (
-                <View>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={setAddListValue}
-                        value={addListValue}
-                        placeholder="Ukucaj naziv"
-                    />
-                    <TouchableOpacity style={styles.itemAdd} onPress={() => createListHandler()}>
-                        <Text style={styles.title}>Dodaj</Text>
-                    </TouchableOpacity>
-                </View>
+        <View style={{ flexDirection: 'row' }}>
+            {isDragView ? (
+                <DraggableFlatList
+                    data={data}
+                    extraData={data}
+                    horizontal
+                    onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
+                    keyExtractor={item => item.id}
+                    renderItem={renderDraggableItem}
+                />
             ) : (
-                <TouchableOpacity style={styles.itemAdd} onPress={() => setAddList(true)}>
-                    <Text style={styles.add}>+</Text>
-                    <Text style={styles.title}>Dodaj Listu</Text>
-                </TouchableOpacity>
-            )
-            }
-            <DraggableFlatList
-                data={data.filter(item => item.closed === false)}
-                extraData={data}
-                horizontal
-                onDragEnd={({ data, from, to }) => handleDrag(data, from, to)}
-                keyExtractor={item => item.id}
-                renderItem={renderItem}
-                simultaneousHandlers={dragRef}
-            />
-        </>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <FlatList
+                        data={data}
+                        extraData={data}
+                        horizontal
+                        keyExtractor={item => item.id}
+                        renderItem={renderItem}
+                    />
+                    {addList ? (
+                        <View>
+                            <TextInput
+                                style={styles.input}
+                                onChangeText={setAddListValue}
+                                value={addListValue}
+                                placeholder="Ukucaj naziv"
+                            />
+                            <TouchableOpacity style={styles.itemAdd} onPress={() => createListHandler()}>
+                                <Text style={styles.title}>Dodaj</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity style={styles.itemAdd} onPress={() => setAddList(true)}>
+                            <Text style={styles.add}>+</Text>
+                            <Text style={styles.title}>Dodaj Listu</Text>
+                        </TouchableOpacity>
+                    )
+                    }
+                </ScrollView>
+            )}
+        </View>
     );
 }
 
@@ -121,10 +208,23 @@ const styles = StyleSheet.create({
         width: Dimensions.get("window").width - 120,
         borderRadius: 8
     },
+    dragItem: {
+        backgroundColor: 'transparent',
+        padding: 3,
+        marginVertical: 8,
+        marginHorizontal: 5,
+        width: Dimensions.get("window").width * 1 / 3,
+        borderRadius: 8,
+        borderColor: 'green',
+        borderWidth: 1
+    },
     card: {
         backgroundColor: '#ddd',
         padding: 8,
         borderRadius: 8
+    },
+    dragCard: {
+        maxHeight: 30
     },
     cardHeader: {
         flexDirection: 'row',
@@ -145,8 +245,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        width: 180,
-        alignSelf: 'flex-end'
+        width: Dimensions.get("window").width - 120,
+        alignSelf: 'flex-start'
     },
     add: {
         fontSize: 30,
@@ -160,5 +260,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 8,
         borderColor: '#eee'
+    },
+    titleInput: {
+        height: 40,
+        borderWidth: 1,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderColor: '#eee',
+        flex: 1
     },
 });

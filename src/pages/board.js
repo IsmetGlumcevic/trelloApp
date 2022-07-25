@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useRoute } from '@react-navigation/native';
 import getBoard from '../utils/data/getBoard';
 import BoardView from '../components/board/boardView';
 import LoaderBoard from '../components/shared/loaderBoard';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Board() {
+    const { token } = useContext(AuthContext);
     const [data, setData] = useState([]);
     const [loader, setLoader] = useState(true);
     const route = useRoute();
@@ -12,7 +14,7 @@ export default function Board() {
 
     async function getBoardData() {
         try {
-            const getData = await getBoard(boardId);
+            const getData = await getBoard(boardId, token);
             setData(getData);
             setLoader(false);
         } catch (e) {

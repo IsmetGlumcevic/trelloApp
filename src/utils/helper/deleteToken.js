@@ -1,9 +1,9 @@
 import { APIKey } from '../../../variables';
 
-export default async function createCard(listId, name, token) {
+export default async function deleteToken(token) {
     try {
-        const create = await fetch(`https://api.trello.com/1/cards?idList=${listId}&name=${name}&key=${APIKey}&token=${token}`, {
-            method: 'POST',
+        const create = await fetch(`https://api.trello.com/1/tokens/${token}/?key=${APIKey}&token=${token}`, {
+            method: 'DELETE',
             headers: {
                 'Accept': 'application/json'
             },

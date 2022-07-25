@@ -1,15 +1,14 @@
 import { APIKey } from '../../../variables';
 
-export default async function getCards(listId, token) {
+export default async function getComments(cardId, token) {
     try {
-
-        const fetchBoard = await fetch(`https://api.trello.com/1/lists/${listId}/cards?fields=all&key=${APIKey}&token=${token}`, {
+        const fetchComment = await fetch(`https://api.trello.com/1/cards/${cardId}/actions?key=ef636ab61049066639b7a247d4c9f008&token=${token}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
             }
         })
-        const response = await fetchBoard.text();
+        const response = await fetchComment.text();
         return JSON.parse(response);
     } catch (e) {
         console.log(e)
